@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atef Shop - MiniMax + MCP</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-zinc-950 text-white min-h-screen flex flex-col">
+<header class="p-4 border-b border-zinc-800 flex justify-between"><h1 class="font-bold">Atef Shop - مساعد ذكي (MiniMax-M3 + MCP)</h1><span class="text-xs text-zinc-400">Netlify + GMI</span></header>
+<main class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col gap-4">
+<div id="chat" class="flex-1 flex flex-col gap-3 overflow-y-auto"></div>
+<div class="flex gap-2"><input id="q" class="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3" placeholder="مثلا: بقداش السماعات؟"><button onclick="ask()" class="bg-white text-black px-6 rounded-xl font-bold">اسأل</button></div>
+</main>
+<script>
+async function ask(){
+  const input = document.getElementById('q');
+  const chat = document.getElementById('chat');
+  const msg = input.value.trim(); if(!msg) return;
+  chat.innerHTML += `<div class='self-end bg-white text-black px-4 py-2 rounded-2xl max-w-[80%]'>${msg}</div>`;
+  input.value = ''; chat.innerHTML += `<div id='loading' class='text-zinc-400 text-sm'>نلوج في الـ MCP ونكلم MiniMax...</div>`;
+  const res = await fetch('/.netlify/functions/chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ message: msg }) });
+  const data = await res.json();
+  document.getElementById('loading')?.remove();
+  chat.innerHTML += `<div class='self-start bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-2xl max-w-[85%] whitespace-pre-wrap'>${data.answer || data.error}</div>`;
+  chat.scrollTop = chat.scrollHeight;
+}
+</script>
+</body>
+</html>
