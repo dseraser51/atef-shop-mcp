@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin - الطلبات</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen p-4">
+<div class="max-w-5xl mx-auto">
+<h1 class="text-2xl font-bold mb-2">📦 لوحة الطلبات - Atef Shop</h1>
+<p class="text-zinc-400 text-sm mb-6">تشوف فيها الكوموندات اللي تعدات من الشات</p>
+
+<div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-6 flex gap-2">
+<input id="secret" type="password" placeholder="كلمة سر الادمين (MY_ADMIN_SECRET)" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2">
+<button onclick="loadOrders()" class="bg-white text-black px-6 py-2 rounded-lg font-bold">شوف الطلبات</button>
+</div>
+
+<div id="stats" class="grid grid-cols-3 gap-4 mb-6 hidden">
+<div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><div class="text-zinc-400 text-xs">مجموع الطلبات</div><div id="total" class="text-2xl font-bold">0</div></div>
+<div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><div class="text-zinc-400 text-xs">اليوم</div><div id="today" class="text-2xl font-bold">0</div></div>
+<div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><div class="text-zinc-400 text-xs">جديدة</div><div id="new" class="text-2xl font-bold">0</div></div>
+</div>
+
+<div id="orders" class="flex flex-col gap-3"></div>
+</div>
+
+<script>
+async function loadOrders(){
+  const secret = document.getElementById('secret').value.trim();
+  if(!secret){ alert('حط كلمة السر'); return; }
+  const ordersDiv = document.getElementById('orders');
+  ordersDiv.innerHTML = '<div class="text-zinc-400">نلوج...</div>';
+  
+  try {
+    const res = await fetch(`/.netlify/functions/admin-orders?secret=${encodeURIComponent(secret)}`);
+    if(!res.ok){ const err = await res.json(); throw new Error(err.error); }
+    const orders = await res.json();
+    
+    document.getElementById('stats').classList.remove('hidden');
+    document.getElementById('total').textContent = orders.length;
+    document.getElementById('today').textContent = orders.filter(o => new Date(o.date).toDateString() === new Date().toDateString()).length;
+    document.getElementById('new').textContent = orders.filter(o => o.status === 'جديد').length;
+
+    if(orders.length === 0){
+      ordersDiv.innerHTML = '<div class="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center text-zinc-400">ما فما حتى كوموند تو</div>';
+      return;
+    }
+
+    ordersDiv.innerHTML = orders.map(o => `
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row justify-between gap-3">
+        <div>
+          <div class="font-bold">${o.orderId} - <span class="text-emerald-400">${o.status}</span></div>
+          <div class="text-sm mt-1">📦 ${o.product} x${o.quantity}</div>
+          <div class="text-sm text-zinc-400 mt-1">👤 ${o.customer_name} | 📞 ${o.phone}</div>
+          <div class="text-sm text-zinc-400">📍 ${o.address}</div>
+        </div>
+        <div class="text-left">
+          <div class="text-xs text-zinc-500">${new Date(o.date).toLocaleString('ar-TN')}</div>
+          <button onclick="navigator.clipboard.writeText('${o.phone}')" class="mt-2 text-xs bg-zinc-800 px-3 py-1 rounded">نسخ النومرو</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e){
+    ordersDiv.innerHTML = `<div class="bg-red-900/30 border border-red-800 rounded-xl p-4 text-red-300">Erreur: ${e.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>
